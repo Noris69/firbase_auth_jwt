@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import axios from 'axios';
 import './App.css';
 import Navbar from './Navbar'; // Import the Navbar component
+
 
 // Initialize Firebase
 const firebaseConfig = {
@@ -37,9 +38,17 @@ const App = () => {
     return () => unregisterAuthObserver();
   }, [email, password, currentQuestion]);
 
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = token;
+      fetchQuestion();
+    }
+  }, []);
+
   const loginUser = async (email, password) => {
     try {
-      const tokenResponse = await axios.post('http://localhost:5000/login', { email, password });
+      const tokenResponse = await axios.post('https://apiquizztest-f12311d8ba20.herokuapp.com/login', { email, password });
       const token = tokenResponse.data.token;
       localStorage.setItem('token', token);
       axios.defaults.headers.common['Authorization'] = token;
@@ -48,10 +57,10 @@ const App = () => {
     }
   };
 
-  const fetchQuestion = useCallback(async () => {
+  const fetchQuestion = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/questions', {
+      const response = await axios.get('https://apiquizztest-f12311d8ba20.herokuapp.com/questions', {
         headers: {
           Authorization: token
         }
@@ -68,21 +77,13 @@ const App = () => {
     } catch (error) {
       console.error('Error fetching questions:', error);
     }
-  }, [user]);
-
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = token;
-      fetchQuestion();
-    }
-  }, [fetchQuestion]);
+  };
 
   const handleAnswerSubmit = async (answer) => {
     setUserAnswers([...userAnswers, answer]);
   
     try {
-      const response = await axios.post('http://localhost:5000/submit-answer', {
+      const response = await axios.post('https://apiquizztest-f12311d8ba20.herokuapp.com/submit-answer', {
         questionId: currentQuestion._id,
         userAnswer: answer
       });
@@ -134,7 +135,7 @@ const App = () => {
   const handleRegister = async () => {
     try {
       await firebase.auth().createUserWithEmailAndPassword(email, password);
-      const tokenResponse = await axios.post('http://localhost:5000/register', { email, password });
+      const tokenResponse = await axios.post('https://apiquizztest-f12311d8ba20.herokuapp.com/register', { email, password });
       const token = tokenResponse.data.token;
       localStorage.setItem('token', token);
     } catch (error) {
@@ -177,16 +178,17 @@ const App = () => {
         </div>
       ) : (
         <div>
-          <p style={{marginLeft:"30%"}}>Please Connect to Play the Quizz</p>
-          <div className="login-form">
-            <h2>Login</h2>
-            <input type="email" value={email} onChange={handleEmailChange} placeholder="Email" className="email-input" />
-            <input type="password" value={password} onChange={handlePasswordChange} placeholder="Password" className="password-input" />
-            <div className="button-group">
-              <button onClick={handleLogin} className="login-button">Login</button>
-              <button onClick={handleRegister} className="register-button">Register</button>
-            </div>
+                                <p style={{marginLeft:"30%"}}>Please Connect to Play the Quizz</p>
+
+        <div className="login-form">
+          <h2>Login</h2>
+          <input type="email" value={email} onChange={handleEmailChange} placeholder="Email" className="email-input" />
+          <input type="password" value={password} onChange={handlePasswordChange} placeholder="Password" className="password-input" />
+          <div className="button-group">
+            <button onClick={handleLogin} className="login-button">Login</button>
+            <button onClick={handleRegister} className="register-button">Register</button>
           </div>
+        </div>
         </div>
       )}
       {notification && <div className="notification">{notification}</div>}
@@ -194,6 +196,8 @@ const App = () => {
     </div>
    
   );
+  
+  
 };
 
 export default App;
