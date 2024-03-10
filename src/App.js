@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import axios from 'axios';
 import './App.css';
 import Navbar from './Navbar'; // Import the Navbar component
-
 
 // Initialize Firebase
 const firebaseConfig = {
@@ -38,14 +37,6 @@ const App = () => {
     return () => unregisterAuthObserver();
   }, [email, password, currentQuestion]);
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = token;
-      fetchQuestion();
-    }
-  }, [fetchQuestion]);
-
   const loginUser = async (email, password) => {
     try {
       const tokenResponse = await axios.post('http://localhost:5000/login', { email, password });
@@ -57,7 +48,7 @@ const App = () => {
     }
   };
 
-  const fetchQuestion = async () => {
+  const fetchQuestion = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get('http://localhost:5000/questions', {
@@ -77,7 +68,15 @@ const App = () => {
     } catch (error) {
       console.error('Error fetching questions:', error);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = token;
+      fetchQuestion();
+    }
+  }, [fetchQuestion]);
 
   const handleAnswerSubmit = async (answer) => {
     setUserAnswers([...userAnswers, answer]);
@@ -178,17 +177,16 @@ const App = () => {
         </div>
       ) : (
         <div>
-                                <p style={{marginLeft:"30%"}}>Please Connect to Play the Quizz</p>
-
-        <div className="login-form">
-          <h2>Login</h2>
-          <input type="email" value={email} onChange={handleEmailChange} placeholder="Email" className="email-input" />
-          <input type="password" value={password} onChange={handlePasswordChange} placeholder="Password" className="password-input" />
-          <div className="button-group">
-            <button onClick={handleLogin} className="login-button">Login</button>
-            <button onClick={handleRegister} className="register-button">Register</button>
+          <p style={{marginLeft:"30%"}}>Please Connect to Play the Quizz</p>
+          <div className="login-form">
+            <h2>Login</h2>
+            <input type="email" value={email} onChange={handleEmailChange} placeholder="Email" className="email-input" />
+            <input type="password" value={password} onChange={handlePasswordChange} placeholder="Password" className="password-input" />
+            <div className="button-group">
+              <button onClick={handleLogin} className="login-button">Login</button>
+              <button onClick={handleRegister} className="register-button">Register</button>
+            </div>
           </div>
-        </div>
         </div>
       )}
       {notification && <div className="notification">{notification}</div>}
@@ -196,8 +194,6 @@ const App = () => {
     </div>
    
   );
-  
-  
 };
 
 export default App;
