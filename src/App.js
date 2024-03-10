@@ -44,7 +44,7 @@ const App = () => {
       axios.defaults.headers.common['Authorization'] = token;
       fetchQuestion();
     }
-  }, []);
+  }, [fetchQuestion]);
 
   const loginUser = async (email, password) => {
     try {
